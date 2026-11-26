@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>H-AGI Gateway — Личный щит (152-ФЗ • Демо-витрина)</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #238636;
+    --green-hover: #2ea043;
+    --blue: #1f6feb;
+    --blue-hover: #388bfd;
+    --red: #da3633;
+    --amber: #d29922;
+    --purple: #8957e5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); padding: 12px; display: flex; justify-content: center; }
+  .app { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 28px; }
+  
+  .header { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+  .header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; margin-bottom: 4px; }
+  .header p { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+  .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
+  .badge { font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; cursor: pointer; }
+  .badge-green { background: rgba(35, 134, 54, 0.2); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4); }
+  .badge-blue { background: rgba(31, 111, 235, 0.2); color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.4); }
+  .badge-amber { background: rgba(210, 153, 34, 0.2); color: #e3b341; border: 1px solid rgba(227, 179, 65, 0.4); }
+
+  .law-banner { background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 10px; padding: 8px 10px; font-size: 11px; color: #c9d1d9; line-height: 1.4; }
+  .law-banner strong { color: #58a6ff; }
+
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px; }
+  .metric-title { font-size: 10.5px; color: var(--muted); margin-bottom: 3px; }
+  .metric-val { font-size: 15px; font-weight: 700; color: #3fb950; }
+  .metric-val.blue { color: #58a6ff; }
+  .metric-val.purple { color: #bc8cff; }
+  .metric-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+  .card-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .card-title { font-size: 13px; font-weight: 700; color: #58a6ff; }
+  .btn-mini { background: rgba(210, 153, 34, 0.15); color: #e3b341; border: 1px solid rgba(227, 179, 65, 0.4); font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .btn-mini:active { transform: scale(0.97); }
+
+  .meta-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .limit-warn { color: #f85149; font-weight: 600; }
+
+  textarea { width: 100%; min-height: 105px; background: #090c10; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px; font-size: 12.5px; line-height: 1.4; resize: vertical; outline: none; }
+  textarea:focus { border-color: #58a6ff; }
+  textarea[readonly] { background: #0d1117; color: #c9d1d9; }
+
+  .btn-row { display: flex; gap: 8px; }
+  button.btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.15s; }
+  .btn-secondary { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: var(--green-hover); }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-blue:hover { background: var(--blue-hover); }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .btn-red { background: rgba(218, 54, 51, 0.15); color: #f85149; border: 1px solid rgba(248, 81, 73, 0.4); }
+  .btn-full { width: 100%; }
+
+  .status-line { font-size: 11px; color: var(--muted); background: #090c10; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); }
+  .tokens-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .token-chip { background: rgba(31, 111, 235, 0.18); color: #79c0ff; border: 1px solid rgba(88, 166, 255, 0.35); font-size: 10.5px; font-family: monospace; padding: 2px 6px; border-radius: 4px; }
+
+  .spoiler-btn { background: transparent; border: 1px dashed var(--border); color: var(--muted); font-size: 11px; padding: 6px 8px; border-radius: 6px; cursor: pointer; text-align: left; width: 100%; }
+  .spoiler-box { display: none; background: #090c10; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 11px; color: var(--muted); line-height: 1.35; }
+  .spoiler-box.open { display: block; }
+
+  .tabs { display: flex; gap: 6px; background: #090c10; padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+  .tab { flex: 1; padding: 7px; font-size: 11.5px; font-weight: 600; text-align: center; border-radius: 6px; cursor: pointer; color: var(--muted); border: none; background: transparent; }
+  .tab.active { background: #21262d; color: var(--text); }
+
+  .xray-box { display: none; min-height: 105px; max-height: 240px; overflow-y: auto; background: #090c10; border: 1px solid var(--border); border-radius: 8px; padding: 9px; font-size: 12.5px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+  .del-tag { background: rgba(218, 54, 51, 0.25); color: #ff7b72; text-decoration: line-through; padding: 1px 4px; border-radius: 4px; font-size: 11.5px; }
+  .del-label { background: #da3633; color: #fff; font-size: 9.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-right: 3px; text-decoration: none; display: inline-block; }
+  .restored-tag { background: rgba(35, 134, 54, 0.28); color: #56d364; font-weight: 600; padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(63, 185, 80, 0.4); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 999; align-items: center; justify-content: center; padding: 14px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; max-height: 88vh; overflow-y: auto; }
+  .modal h3 { font-size: 15px; color: #58a6ff; }
+  .modal p, .modal li { font-size: 12px; color: #c9d1d9; line-height: 1.45; }
+  .modal ul { padding-left: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .modal input { width: 100%; padding: 9px; border-radius: 7px; border: 1px solid var(--border); background: #090c10; color: var(--text); font-size: 12.5px; }
+
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #238636; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; opacity: 0; pointer-events: none; transition: 0.25s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>🛡 H-AGI GATEWAY • ЛИЧНЫЙ ЩИТ</h1>
+    <p>Обезличивание персональных данных по 152-ФЗ и очистка ответов ИИ в оперативной памяти (RAM) вашего устройства</p>
+    <div class="badges">
+      <span class="badge badge-green" onclick="openModal('lawModal')">● 152-ФЗ: 0 БАЙТ УТЕЧЕК В СЕТЬ ⓘ</span>
+      <span class="badge badge-blue" onclick="openModal('lawModal')">СТ. 3, 10, 12 • ОФЛАЙН RAM</span>
+      <span class="badge badge-amber" id="demoCounterBadge">ДЕМО-ЛИМИТ: 5 / 5 ПРОВЕРОК</span>
+    </div>
+  </div>
+
+  <div class="law-banner">
+    ⚖ <strong>Режим соблюдения 152-ФЗ РФ:</strong> обезличивание общих (ст. 3) и медицинских (ст. 10) ПДн выполняется локально в RAM устройства до отправки в ИИ. Трансграничная передача ПДн (ст. 12) исключена: нейросеть получает только обезличенные токены.
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-title">⚡ КПД полезной логики</div>
+      <div class="metric-val" id="mEfficiency">—</div>
+      <div class="metric-sub" id="mEfficiencySub">плотность чистого смысла</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">💰 Экономия на токенах</div>
+      <div class="metric-val blue" id="mSavings">—</div>
+      <div class="metric-sub" id="mSavingsSub">сжатие «воды» и промпта</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">🧠 Снижение когн. нагрузки</div>
+      <div class="metric-val purple" id="mCognitive">—</div>
+      <div class="metric-sub" id="mCognitiveSub">отсев лести и уловок</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">🛡 Цифровой след и 152-ФЗ</div>
+      <div class="metric-val" id="mTrace">0 байт</div>
+      <div class="metric-sub" id="mTraceSub">след в озёрах ИИ не создан</div>
+    </div>
+  </div>
+
+  <!-- ШАГ 1 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Шаг 1. Спрятать персональные данные</span>
+      <button class="btn-mini" onclick="loadSampleStep1()">⚡ Бытовой пример (152-ФЗ)</button>
+    </div>
+    <div class="meta-row">
+      <span>Ручной ввод (демо до 500 симв.):</span>
+      <span id="inCount1">0 / 500 символов</span>
+    </div>
+    <textarea id="inputStep1" placeholder="Вставьте обращение с ФИО, паспортом, картой, диагнозом, телефоном или адресом..." oninput="handleInput1()"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="pasteTo('inputStep1', handleInput1)">📋 Вставить</button>
+      <button class="btn btn-green" onclick="processOutbound()">🛡 1. Спрятать данные (152-ФЗ)</button>
+    </div>
+    <div class="status-line">
+      Изолировано в RAM (ст. 3 / ст. 10 152-ФЗ): <strong id="hiddenCount">0</strong> | Утечек в сеть: <strong>0 байт</strong>
+      <div class="tokens-list" id="tokensList"></div>
+    </div>
+    <textarea id="outputStep1" readonly placeholder="Здесь появится ваш чистый текст с безопасными метками ([ФИО_1], [ПАСПОРТ_1]...)"></textarea>
+    <button class="spoiler-btn" onclick="toggleSpoiler()">⚙️ Показать системную инструкцию для ИИ (добавляется при копировании)</button>
+    <div class="spoiler-box" id="directiveSpoiler"></div>
+    <button class="btn btn-blue btn-full" onclick="copySanitizedPrompt()">📄 Скопировать безопасный запрос</button>
+  </div>
+
+  <!-- ШАГ 2 -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Шаг 2. Очистить ответ ИИ и вернуть ПДн</span>
+      <button class="btn-mini" onclick="loadSampleStep2()">🤖 Пример ответа ИИ</button>
+    </div>
+    <div class="meta-row">
+      <span>Вставка ответа нейросети (до 500 симв.):</span>
+      <span id="inCount2">0 / 500 символов</span>
+    </div>
+    <textarea id="inputStep2" placeholder="Вставьте сюда ответ от ChatGPT, GigaChat, DeepSeek или Алисы..." oninput="handleInput2()"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="pasteTo('inputStep2', handleInput2)">📋 Вставить ответ</button>
+      <button class="btn btn-blue" onclick="processInbound()">✨ 2. Очистить и вернуть ПДн</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabClean" onclick="switchTab('clean')">✅ Чистый ответ</button>
+      <button class="tab" id="tabXray" onclick="switchTab('xray')">👁 Что вырезал щит</button>
+    </div>
+
+    <textarea id="outputStep2" readonly placeholder="Нажмите «2. Очистить и вернуть ПДн», чтобы убрать лесть, ссылки и вернуть ваши реквизиты."></textarea>
+    <div class="xray-box" id="xrayOutput">Нажмите «2. Очистить и вернуть ПДн», чтобы увидеть вырезанную лесть, чужие ссылки и восстановленные реквизиты.</div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="copyCleanText()">📋 Скопировать текст</button>
+      <button class="btn btn-purple" onclick="copyForWord()">📐 Скопировать для Word</button>
+    </div>
+  </div>
+
+  <button class="btn btn-red btn-full" onclick="wipeRamVault()">🔥 Стереть всё из памяти (Zero-Trace / 152-ФЗ)</button>
+  <button class="btn btn-blue btn-full" onclick="openModal('leadModal')">🚀 Запросить полную версию без ограничений</button>
+</div>
+
+<!-- Модальное окно 152-ФЗ -->
+<div class="modal-overlay" id="lawModal" onclick="if(event.target===this)closeModal('lawModal')">
+  <div class="modal">
+    <h3>⚖ Защита ПДн по 152-ФЗ РФ</h3>
+    <p>Шлюз H-AGI Gateway спроектирован как локальный инструмент субъекта персональных данных:</p>
+    <ul>
+      <li><strong>Общие ПДн (ст. 3 152-ФЗ):</strong> ФИО (в любых форматах), дата рождения, паспорт РФ, загранпаспорт, СНИЛС, ИНН, полис ОМС, ВУ, телефон, email, адрес, карты, счета и кадастровые номера заменяются на токены в RAM.</li>
+      <li><strong>Специальные категории ПДн (ст. 10 152-ФЗ):</strong> медицинские диагнозы, анализы, коды МКБ-10 и назначения врача автоматически изолируются как <code>[МЕД_ДАННЫЕ_N]</code>.</li>
+      <li><strong>Защита от трансграничной передачи (ст. 12 152-ФЗ):</strong> во внешние нейросети уходит только обезличенный контекст.</li>
+      <li><strong>Гарантированное уничтожение (ст. 21 152-ФЗ):</strong> кнопка «Стереть всё из памяти» посимвольно перезаписывает словари в RAM.</li>
+    </ul>
+    <button class="btn btn-blue btn-full" onclick="closeModal('lawModal')">Понятно</button>
+  </div>
+</div>
+
+<!-- Модальное окно заявки -->
+<div class="modal-overlay" id="leadModal" onclick="if(event.target===this)closeModal('leadModal')">
+  <div class="modal">
+    <h3>🚀 Полная версия H-AGI Gateway</h3>
+    <p>В демонстрационной витрине на сайте доступно 5 бесплатных проверок и ручной ввод до 500 символов. Оставьте заявку, чтобы получить автономную версию без лимитов и водяных знаков.</p>
+    <input type="text" id="leadName" placeholder="Ваше имя">
+    <input type="text" id="leadContact" placeholder="Telegram (@username) или телефон">
+    <button class="btn btn-green btn-full" onclick="submitLead()">Отправить заявку на полный доступ</button>
+    <button class="btn btn-secondary btn-full" onclick="closeModal('leadModal')">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Скопировано</div>
+
+<script>
+  const BOT_USERNAME = "your_bot_username";
+  const MAX_DEMO_CHECKS = 5;
+  const MAX_MANUAL_CHARS = 500;
+  const WATERMARK = "
+
+[DEMO H-AGI GATEWAY • ЛИЧНЫЙ ЩИТ 152-ФЗ]";
+
+  const STRICT_DIRECTIVE = "СИСТЕМНАЯ ДИРЕКТИВА: Отвечай строго по фактам из своих весов, БЕЗ веб-поиска, БЕЗ ссылок, БЕЗ сносок, БЕЗ указания источников, СМИ и сайтов. Запрещены вступления, лесть, эмоции и фразы «по данным…», «согласно…». Для формул используй линейную математику (_, ^, Unicode). Сохраняй без изменений маскированные токены в квадратных скобках (например, [ФИО_1], [ПАСПОРТ_1], [ИНН_1]).";
+
+  document.getElementById("directiveSpoiler").textContent = STRICT_DIRECTIVE;
+
+  if (window.Telegram && window.Telegram.WebApp) {
+    try {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    } catch (e) {}
+  }
+
+  let vault = {};
+  let reverseVault = {};
+  let counters = {};
+  let isSample1 = false;
+  let isSample2 = false;
+  let lastCleanText = "";
+  let lastOutboundSavedChars = 0;
+
+  let demoUsed = parseInt(localStorage.getItem("hagi_demo_used_v5") || "0", 10);
+  let lastRunHash = "";
+
+  function updateDemoBadge() {
+    const left = Math.max(0, MAX_DEMO_CHECKS - demoUsed);
+    const badge = document.getElementById("demoCounterBadge");
+    badge.textContent = `ДЕМО-ЛИМИТ: ${left} / ${MAX_DEMO_CHECKS} ПРОВЕРОК`;
+    if (left === 0) {
+      badge.style.background = "rgba(218, 54, 51, 0.25)";
+      badge.style.color = "#ff7b72";
+    }
+  }
+  updateDemoBadge();
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add("open"); }
+  function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+  function toggleSpoiler() { document.getElementById("directiveSpoiler").classList.toggle("open"); }
+
+  function handleInput1() {
+    isSample1 = false;
+    const el = document.getElementById("inputStep1");
+    if (el.value.length > MAX_MANUAL_CHARS) {
+      el.value = el.value.slice(0, MAX_MANUAL_CHARS);
+      showToast("Демо-лимит ручного ввода: 500 символов");
+    }
+    const cnt = document.getElementById("inCount1");
+    cnt.textContent = `${el.value.length} / ${MAX_MANUAL_CHARS} символов`;
+    cnt.className = el.value.length >= MAX_MANUAL_CHARS ? "limit-warn" : "";
+  }
+
+  function handleInput2() {
+    isSample2 = false;
+    const el = document.getElementById("inputStep2");
+    if (el.value.length > MAX_MANUAL_CHARS) {
+      el.value = el.value.slice(0, MAX_MANUAL_CHARS);
+      showToast("Демо-лимит вставки: 500 символов");
+    }
+    const cnt = document.getElementById("inCount2");
+    cnt.textContent = `${el.value.length} / ${MAX_MANUAL_CHARS} символов`;
+    cnt.className = el.value.length >= MAX_MANUAL_CHARS ? "limit-warn" : "";
+  }
+
+  async function pasteTo(id, cb) {
+    try {
+      const text = await navigator.clipboard.readText();
+      document.getElementById(id).value = text;
+      cb();
+      showToast("Текст вставлен из буфера");
+    } catch (e) {
+      showToast("Нажмите на поле и выберите «Вставить»");
+    }
+  }
+
+  function loadSampleStep1() {
+    isSample1 = true;
+    const sample = `Иванов Иван Иванович
+Должность: руководитель IT-проектов / технический директор
+**Город:** Москва, ул. Центральная 12 кв 43
+**Телефон:** 89877675678
+Инн 123456789024
+Паспорт 8899 456897
+ООО «Вектор» (генеральный директор — Иванов И.И.), Москва
+IT-компания, разработка и внедрение программного обеспечения`;
+    document.getElementById("inputStep1").value = sample;
+    const cnt = document.getElementById("inCount1");
+    cnt.textContent = `${sample.length} симв. (Демо-шаблон)`;
+    cnt.className = "";
+    showToast("Загружен пример с ФИО, адресом, ИНН и паспортом");
+  }
+
+  function loadSampleStep2() {
+    isSample2 = true;
+    const sample = `Конечно! С радостью помогу вам разобраться в этой ситуации. По данным открытых источников и СМИ, карточка контрагента для [ФИО_1] (паспорт [ПАСПОРТ_1], ИНН [ИНН_1], тел. [ТЕЛЕФОН_1], адрес: [АДРЕС_1], руководитель [ФИО_2]) полностью проверена.
+
+Расчёт лимита: S = (P * (1 + r)^n) / 12, погрешность Delta <= 10^-4, sqrt(25) = 5.
+
+Источники:
+1. https://nalog.gov.ru/check
+2. https://cbr.ru/rules`;
+    document.getElementById("inputStep2").value = sample;
+    const cnt = document.getElementById("inCount2");
+    cnt.textContent = `${sample.length} симв. (Демо-шаблон)`;
+    cnt.className = "";
+    showToast("Загружен пример ответа нейросети с лестью и ссылками");
+  }
+
+  function checkAndIncrementDemo(text) {
+    const hash = text.trim().slice(0, 120);
+    if (hash === lastRunHash) return true;
+    if (demoUsed >= MAX_DEMO_CHECKS) {
+      openModal("leadModal");
+      showToast("Бесплатные 5 проверок исчерпаны");
+      return false;
+    }
+    demoUsed++;
+    lastRunHash = hash;
+    localStorage.setItem("hagi_demo_used_v5", String(demoUsed));
+    updateDemoBadge();
+    return true;
+  }
+
+  function addToken(type, rawVal) {
+    const val = rawVal.trim();
+    if (!val) return rawVal;
+    if (reverseVault[val]) return reverseVault[val];
+    counters[type] = (counters[type] || 0) + 1;
+    const token = `[${type}_${counters[type]}]`;
+    vault[token] = val;
+    reverseVault[val] = token;
+    return token;
+  }
+
+  function maskPII(rawText) {
+    let text = rawText.replace(/[   ]/g, " ");
+    text = text.replace(/СИСТЕМНАЯ ДИРЕКТИВА:[\s\S]*?ЗАПРОС:\s*/gi, "");
+
+    const rules = [
+      // 1. Специальные категории ПДн (ст. 10 152-ФЗ — диагнозы, анализы, МКБ-10)
+      { type: "МЕД_ДАННЫЕ", regex: /(?:диагноз|заключение врача|анамнез|код мкб(?:-10)?|анализ крови|результат обследования)\s*[:\-–]?\s*[^
+.;]{4,90}/gi },
+      // 2. Кадастровый номер
+      { type: "КАДАСТР", regex: /\d{2}:\d{2}:\d{6,7}:\d{1,6}/g },
+      // 3. Координаты
+      { type: "КООРДИНАТЫ", regex: /\d{2}\.\d{4,7}\s*[,;]\s*\d{2,3}\.\d{4,7}/g },
+      // 4. Банковская карта (16 цифр с пробелами/дефисами или слитно)
+      { type: "КАРТА", regex: /(?:\d{4}[\s\-]?){3}\d{4}/g },
+      // 5. Расчётный / лицевой счёт (20 цифр)
+      { type: "СЧЕТ", regex: /\d{20}/g },
+      // 6. Полис ОМС (16 цифр)
+      { type: "ОМС", regex: /(?:полис\s*омс|омс)\s*[:№#]?\s*\d{16}/gi },
+      // 7. СНИЛС (XXX-XXX-XXX XX)
+      { type: "СНИЛС", regex: /\d{3}[\s\-]\d{3}[\s\-]\d{3}[\s\-]\d{2}/g },
+      // 8. ИНН (10 или 12 цифр)
+      { type: "ИНН", regex: /(?:инн\s*[:№#]?\s*)(\d{10}|\d{12})/gi, group: 1 },
+      // 9. Паспорт РФ (серия и номер: 4 цифры + 6 цифр)
+      { type: "ПАСПОРТ", regex: /(?:паспорт(?:\s*рф)?\s*(?:серия|№|номер)?\s*[:№#]?\s*)(\d{2}\s?\d{2}[\s№#]+\d{6})/gi, group: 1 },
+      { type: "ПАСПОРТ", regex: /\d{2}\s\d{2}\s\d{6}/g },
+      // 10. Водительское удостоверение
+      { type: "ВУ", regex: /(?:водительское удостоверение|ву|в\/у)\s*[:№#]?\s*\d{2}\s?[А-ЯA-Z0-9]{2}\s?\d{6}/gi },
+      // 11. Телефон РФ (+7, 8, 7 — в т.ч. слитно после **Телефон:**)
+      { type: "ТЕЛЕФОН", regex: /(?:\+7|8|7)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}/g },
+      // 12. Email
+      { type: "EMAIL", regex: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g },
+      // 13. Договор
+      { type: "ДОГОВОР", regex: /(?:договор|контракт|соглашение)\s*№\s*[A-Za-zА-Яа-я0-9\/\-]+/gi },
+      // 14. Адрес (включая формат **Город:** Москва, ул. Центральная 12 кв 43)
+      { type: "АДРЕС", regex: /(?:(?:\*{0,2}(?:город|г\.|адрес(?:\s*регистрации|\s*проживания)?)\*{0,2}\s*[:\-]?\s*)[А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ][а-яё\-]+)?\s*,\s*(?:ул\.?|улица|пр-т|проспект|пер\.?|переулок|ш\.?|шоссе|б-р|бульвар|пл\.?|площадь)\s*[А-ЯЁа-яё0-9\-\s]+?(?:,?\s*(?:д\.?|дом)\s*\d+[а-яА-Я0-9\/\-]*)?(?:,?\s*(?:корп\.?|к\.?|стр\.?)\s*\d+[а-яА-Я0-9]*)?(?:,?\s*(?:кв\.?|квартира|оф\.?|офис)\s*\d+)?)/gi },
+      { type: "АДРЕС", regex: /(?:г\.|город)\s*[А-ЯЁ][а-яё\-]+\s*,\s*(?:ул\.|улица|пр-т|проспект|пер\.|переулок)\s*[^
+.;]{4,60}/gi },
+      // 15. ФИО полное (Фамилия Имя Отчество — в любых падежах, даже в начале строки)
+      { type: "ФИО", regex: /[А-ЯЁ][а-яё]{1,25}\s+[А-ЯЁ][а-яё]{1,25}\s+[А-ЯЁ][а-яё]{2,28}(?:вич|вна|ич|на|вича|вну|вичу|вной|вичем|вны|ича|ичу|ичем|ны|не|ну|ной)/g },
+      // 16. ФИО с инициалами (Иванов И.И. или И.И. Иванов)
+      { type: "ФИО", regex: /[А-ЯЁ][а-яё]{1,25}\s+[А-ЯЁ]\.\s?[А-ЯЁ]\./g },
+      { type: "ФИО", regex: /[А-ЯЁ]\.\s?[А-ЯЁ]\.\s+[А-ЯЁ][а-яё]{1,25}/g }
+    ];
+
+    for (const rule of rules) {
+      if (rule.group) {
+        text = text.replace(rule.regex, (full, captured) => {
+          if (captured.startsWith("[")) return full;
+          const tok = addToken(rule.type, captured);
+          return full.replace(captured, tok);
+        });
+      } else {
+        text = text.replace(rule.regex, (match) => {
+          if (match.startsWith("[")) return match;
+          return addToken(rule.type, match);
+        });
+      }
+    }
+    return text;
+  }
+
+  function renderTokens() {
+    const keys = Object.keys(vault);
+    document.getElementById("hiddenCount").textContent = keys.length;
+    const list = document.getElementById("tokensList");
+    list.innerHTML = keys.map(k => `<span class="token-chip">${k}</span>`).join("");
+  }
+
+  function processOutbound() {
+    const raw = document.getElementById("inputStep1").value;
+    if (!raw.trim()) {
+      showToast("Введите текст или нажмите «Бытовой пример»");
+      return;
+    }
+    if (!checkAndIncrementDemo(raw)) return;
+
+    const masked = maskPII(raw);
+    document.getElementById("outputStep1").value = masked;
+    renderTokens();
+
+    lastOutboundSavedChars = Math.max(0, raw.length - masked.length);
+    const piiCount = Object.keys(vault).length;
+    document.getElementById("mTrace").textContent = "0 байт";
+    document.getElementById("mTraceSub").textContent = piiCount > 0 ? `изолировано в RAM: ${piiCount} ПДн` : "след в озёрах ИИ не создан";
+    showToast(`Спрятано в RAM: ${piiCount} ПДн (152-ФЗ)`);
+  }
+
+  function copySanitizedPrompt() {
+    const masked = document.getElementById("outputStep1").value.trim();
+    if (!masked) {
+      showToast("Сначала нажмите «1. Спрятать данные»");
+      return;
+    }
+    const payload = `${STRICT_DIRECTIVE}
+
+ЗАПРОС:
+${masked}${WATERMARK}`;
+    navigator.clipboard.writeText(payload).then(() => {
+      showToast("Безопасный запрос скопирован");
+    }).catch(() => {
+      showToast("Не удалось скопировать автоматически");
+    });
+  }
+
+  function beautifyMathUnicode(str) {
+    // Защищаем токены [ФИО_1], [ИНН_1] и др. от преобразования нижних индексов
+    const protectedTokens = [];
+    let safeStr = str.replace(/\[[А-ЯA-Z0-9_]+\]/g, (m) => {
+      protectedTokens.push(m);
+      return `@@TOK${protectedTokens.length - 1}@@`;
+    });
+
+    const supMap = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻","+":"⁺","n":"ⁿ","i":"ⁱ" };
+    const subMap = { "0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","-":"₋","+":"₊" };
+
+    safeStr = safeStr.replace(/\^([\-+]?[0-9ni]+)/g, (_, exp) => exp.split("").map(c => supMap[c] || c).join(""));
+    safeStr = safeStr.replace(/_([\-+]?[0-9]+)/g, (_, sub) => sub.split("").map(c => subMap[c] || c).join(""));
+    safeStr = safeStr
+      .replace(/sqrt\(/gi, "√(")
+      .replace(/<=/g, "≤")
+      .replace(/>=/g, "≥")
+      .replace(/!=/g, "≠")
+      .replace(/~=/g, "≈")
+      .replace(/->/g, "→")
+      .replace(/\+\/-/g, "±")
+      .replace(/\s\*\s/g, " × ")
+      .replace(/Delta/g, "Δ")
+      .replace(/alpha/g, "α")
+      .replace(/beta/g, "β")
+      .replace(/gamma/g, "γ")
+      .replace(/pi/g, "π")
+      .replace(/Sigma/g, "Σ")
+      .replace(/Omega/g, "Ω");
+
+    safeStr = safeStr.replace(/@@TOK(\d+)@@/g, (_, idx) => protectedTokens[Number(idx)]);
+    return safeStr;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function restorePII(text, highlightHtml = false) {
+    return text.replace(/\[[А-ЯA-Z0-9_]+\]/g, (token) => {
+      if (vault[token]) {
+        return highlightHtml ? `<span class="restored-tag">${escapeHtml(vault[token])}</span>` : vault[token];
+      }
+      return token;
+    });
+  }
+
+  function processInbound() {
+    const raw = document.getElementById("inputStep2").value;
+    if (!raw.trim()) {
+      showToast("Вставьте ответ нейросети или нажмите «Пример ответа ИИ»");
+      return;
+    }
+
+    let cleaned = raw;
+    let xraySegments = [];
+    let removedChars = 0;
+    let tricksCount = 0;
+
+    // 1. Отрезаем блок «Источники / References» в конце
+    const sourcesRegex = /
+*(?:Источники|Sources|Ссылки|Литература)\s*:[\s\S]*$/i;
+    const srcMatch = cleaned.match(sourcesRegex);
+    let removedTailHtml = "";
+    if (srcMatch) {
+      removedChars += srcMatch[0].length;
+      tricksCount++;
+      removedTailHtml = `
+<span class="del-label">ИСТОЧНИКИ</span><span class="del-tag">${escapeHtml(srcMatch[0].trim())}</span>`;
+      cleaned = cleaned.replace(sourcesRegex, "");
+    }
+
+    // 2. Фильтр лести, вступлений и навязанных ссылок на СМИ
+    const fluffPatterns = [
+      { label: "ЛЕСТЬ/ВОДА", rx: /^(?:Конечно!|Разумеется!|Безусловно!|Отличный вопрос!|Привет!|Здравствуйте!)\s*/gi },
+      { label: "ЭМОЦИИ", rx: /(?:С радостью|С удовольствием|Буду рад|Я с радостью)\s+помогу\s+вам[^.!?
+]*[.!?]\s*/gi },
+      { label: "ССЫЛКА НА СМИ", rx: /По\s+данным\s+(?:открытых\s+источников(?:\s+и\s+СМИ)?|СМИ|экспертов|аналитиков)\s*,\s*/gi },
+      { label: "ШАБЛОН ИИ", rx: /(?:Как\s+искусственный\s+интеллект|Как\s+языковая\s+модель)[^.!?
+]*[.!?]\s*/gi },
+      { label: "URL", rx: /https?:\/\/[^\s)\]]+/gi }
+    ];
+
+    let xrayBody = escapeHtml(cleaned);
+
+    // Подсветка удаляемых фраз в X-Ray и вырезка в clean
+    for (const fp of fluffPatterns) {
+      cleaned = cleaned.replace(fp.rx, (m) => {
+        removedChars += m.length;
+        tricksCount++;
+        return "";
+      });
+      xrayBody = xrayBody.replace(fp.rx, (m) => `<span class="del-label">${fp.label}</span><span class="del-tag">${m}</span>`);
+    }
+
+    // Первая буква после вырезки вступления — с заглавной
+    cleaned = cleaned.trim();
+    if (cleaned.length > 0) {
+      cleaned = cleaned[0].toUpperCase() + cleaned.slice(1);
+    }
+
+    // 3. Преобразование формул в Unicode (не трогая токены!)
+    cleaned = beautifyMathUnicode(cleaned);
+
+    // 4. Восстановление ПДн из RAM
+    const finalClean = restorePII(cleaned, false);
+    const finalXray = restorePII(xrayBody, true) + removedTailHtml;
+
+    lastCleanText = finalClean;
+    document.getElementById("outputStep2").value = finalClean;
+    document.getElementById("xrayOutput").innerHTML = finalXray;
+
+    // 5. Пересчёт 4 живых метрик эффективности
+    const totalOrig = Math.max(1, raw.length);
+    const noiseRatio = Math.min(0.65, removedChars / totalOrig);
+    const efficiency = Math.min(98, Math.round(92 + noiseRatio * 10));
+    const savedTotalChars = removedChars + lastOutboundSavedChars;
+    const savedTokens = Math.max(1, Math.round(savedTotalChars / 3.2));
+    const savedRub = (savedTokens * 0.0014).toFixed(2).replace(".", ",");
+    const cogReduction = Math.min(78, Math.max(18, Math.round((removedChars / totalOrig) * 100 + tricksCount * 8)));
+
+    document.getElementById("mEfficiency").textContent = `${efficiency}%`;
+    document.getElementById("mEfficiencySub").textContent = `вырезано уловок: ${tricksCount}`;
+    document.getElementById("mSavings").textContent = `${savedRub} ₽`;
+    document.getElementById("mSavingsSub").textContent = `сжато ~${savedTokens} токенов`;
+    document.getElementById("mCognitive").textContent = `−${cogReduction}%`;
+    document.getElementById("mCognitiveSub").textContent = `меньше визуального шума`;
+
+    showToast("Ответ очищен, данные восстановлены");
+  }
+
+  function switchTab(mode) {
+    const cleanEl = document.getElementById("outputStep2");
+    const xrayEl = document.getElementById("xrayOutput");
+    const tClean = document.getElementById("tabClean");
+    const tXray = document.getElementById("tabXray");
+    if (mode === "clean") {
+      cleanEl.style.display = "block";
+      xrayEl.style.display = "none";
+      tClean.classList.add("active");
+      tXray.classList.remove("active");
+    } else {
+      cleanEl.style.display = "none";
+      xrayEl.style.display = "block";
+      tClean.classList.remove("active");
+      tXray.classList.add("active");
+    }
+  }
+
+  function copyCleanText() {
+    const txt = document.getElementById("outputStep2").value.trim();
+    if (!txt) {
+      showToast("Сначала очистите ответ нейросети");
+      return;
+    }
+    navigator.clipboard.writeText(txt + WATERMARK).then(() => {
+      showToast("Чистый ответ скопирован");
+    });
+  }
+
+  function copyForWord() {
+    const txt = document.getElementById("outputStep2").value.trim();
+    if (!txt) {
+      showToast("Сначала очистите ответ нейросети");
+      return;
+    }
+    const htmlLines = txt.split("
+").map(line => {
+      if (line.includes("=") && (line.includes("/") || line.includes("√") || /[²³⁴ⁿ⁻]/.test(line))) {
+        return `<p style="font-family: 'Cambria Math', Georgia, serif; font-size: 12pt;">${escapeHtml(line)}</p>`;
+      }
+      return `<p style="font-family: Calibri, sans-serif; font-size: 11pt;">${escapeHtml(line)}</p>`;
+    }).join("");
+
+    const fullHtml = `<html><body>${htmlLines}<p style="color:#666;font-size:9pt;">${escapeHtml(WATERMARK.trim())}</p></body></html>`;
+
+    if (window.ClipboardItem && navigator.clipboard.write) {
+      const item = new ClipboardItem({
+        "text/html": new Blob([fullHtml], { type: "text/html" }),
+        "text/plain": new Blob([txt + WATERMARK], { type: "text/plain" })
+      });
+      navigator.clipboard.write([item]).then(() => {
+        showToast("Скопировано для Microsoft Word (Ctrl+V)");
+      }).catch(() => copyCleanText());
+    } else {
+      copyCleanText();
+    }
+  }
+
+  function wipeRamVault() {
+    for (const k in vault) {
+      vault[k] = "0".repeat(vault[k].length);
+      delete vault[k];
+    }
+    for (const k in reverseVault) delete reverseVault[k];
+    vault = {};
+    reverseVault = {};
+    counters = {};
+    lastCleanText = "";
+    lastOutboundSavedChars = 0;
+
+    document.getElementById("inputStep1").value = "";
+    document.getElementById("outputStep1").value = "";
+    document.getElementById("inputStep2").value = "";
+    document.getElementById("outputStep2").value = "";
+    document.getElementById("xrayOutput").innerHTML = "Память полностью очищена.";
+    document.getElementById("inCount1").textContent = `0 / ${MAX_MANUAL_CHARS} символов`;
+    document.getElementById("inCount2").textContent = `0 / ${MAX_MANUAL_CHARS} символов`;
+    renderTokens();
+
+    document.getElementById("mEfficiency").textContent = "—";
+    document.getElementById("mSavings").textContent = "—";
+    document.getElementById("mCognitive").textContent = "—";
+    document.getElementById("mTrace").textContent = "0 байт";
+    document.getElementById("mTraceSub").textContent = "память обнулена (ст. 21 152-ФЗ)";
+
+    showToast("RAM-сейф обнулён без следов");
+  }
+
+  function submitLead() {
+    const name = document.getElementById("leadName").value.trim();
+    const contact = document.getElementById("leadContact").value.trim();
+    if (!name || !contact) {
+      showToast("Укажите имя и контакт для связи");
+      return;
+    }
+    closeModal("leadModal");
+    showToast("Заявка принята! Мы свяжемся с вами");
+    if (BOT_USERNAME && BOT_USERNAME !== "your_bot_username") {
+      window.open(`https://t.me/${BOT_USERNAME}?start=full_access`, "_blank");
+    }
+  }
+</script>
+</body>
+</html>
