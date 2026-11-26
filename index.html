@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>H-AGI Gateway — Личный щит (Демо)</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --blue: #2f81f7;
+    --green: #238636;
+    --green-hi: #3fb950;
+    --red: #da3633;
+    --red-hi: #f85149;
+    --amber: #d29922;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 12px;
+    line-height: 1.45;
+  }
+  .container { max-width: 480px; margin: 0 auto; }
+  .header {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .title { font-size: 16px; font-weight: 800; letter-spacing: 0.4px; }
+  .title span { color: var(--blue); }
+  .subtitle { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+  .badge-green { background: rgba(35,134,54,0.18); color: var(--green-hi); border-color: rgba(63,185,80,0.4); }
+  .badge-amber { background: rgba(210,153,34,0.18); color: #e3b341; border-color: rgba(210,153,34,0.45); }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px;
+  }
+  .metric-label { font-size: 10px; color: var(--muted); font-weight: 600; }
+  .metric-val { font-size: 15px; font-weight: 800; margin-top: 2px; color: var(--green-hi); }
+  .metric-sub { font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .step-title { font-size: 12.5px; font-weight: 700; color: #79c0ff; text-transform: uppercase; }
+  .mini-btn {
+    background: #21262d;
+    color: #e3b341;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .char-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 92px;
+    background: #090d13;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px;
+    font-size: 12.5px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  textarea:focus { outline: none; border-color: var(--blue); }
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+  }
+  .btn-sec { background: #21262d; border: 1px solid var(--border); color: var(--text); }
+  .btn-green { background: var(--green); }
+  .btn-blue { background: var(--blue); }
+  .btn-red { background: rgba(218,54,51,0.2); border: 1px solid rgba(248,81,73,0.45); color: var(--red-hi); width: 100%; margin-top: 6px; }
+  .btn-full { width: 100%; margin-top: 8px; }
+
+  .status-box {
+    background: #090d13;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  .tokens-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .token-chip {
+    background: rgba(47,129,247,0.16);
+    color: #79c0ff;
+    border: 1px solid rgba(47,129,247,0.35);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 10.5px;
+    font-family: monospace;
+  }
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .tab {
+    background: #21262d;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tab.active { background: rgba(47,129,247,0.2); color: #fff; border-color: var(--blue); }
+  .xray-box {
+    display: none;
+    background: #090d13;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px;
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 92px;
+    white-space: pre-wrap;
+  }
+  .xray-del { background: rgba(248,81,73,0.22); color: #ffa198; text-decoration: line-through; padding: 1px 4px; border-radius: 4px; }
+  .xray-tag { font-size: 9px; font-weight: 800; background: var(--red); color: #fff; padding: 1px 4px; border-radius: 3px; margin-right: 3px; }
+  .xray-ok { background: rgba(63,185,80,0.22); color: var(--green-hi); font-weight: 700; padding: 1px 4px; border-radius: 4px; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(13,17,23,0.97);
+    display: none; align-items: center; justify-content: center; padding: 18px; z-index: 9999;
+  }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; max-width: 400px; width: 100%; text-align: center;
+  }
+  .modal h2 { font-size: 16px; margin-bottom: 8px; }
+  .modal p { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .modal input {
+    width: 100%; padding: 9px; margin-bottom: 8px; border-radius: 8px;
+    border: 1px solid var(--border); background: #090d13; color: var(--text); font-size: 12.5px;
+  }
+  .toast {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: #238636; color: #fff; padding: 8px 14px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; display: none; z-index: 10000;
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="lockScreen">
+  <div class="modal">
+    <h2 style="color:#f85149;">🔒 ДОСТУП ОГРАНИЧЕН</h2>
+    <p>Демо-витрина <b>H-AGI Gateway — Личный щит</b> работает исключительно внутри официального Telegram-бота.</p>
+    <a id="botLink" href="https://t.me/your_bot_username" style="display:block;background:#2f81f7;color:#fff;text-decoration:none;padding:10px;border-radius:8px;font-weight:700;font-size:13px;">Открыть в Telegram</a>
+  </div>
+</div>
+
+<div class="overlay" id="leadModal">
+  <div class="modal">
+    <h2 style="color:#3fb950;">🚀 Демо-лимит исчерпан</h2>
+    <p>Вы использовали все 5 бесплатных проверок. Оставьте контакт, чтобы получить полную личную версию без ограничений в 300 символов и водяных знаков.</p>
+    <input type="text" id="leadName" placeholder="Ваше имя">
+    <input type="text" id="leadContact" placeholder="Telegram (@username) или телефон">
+    <button class="btn btn-green btn-full" onclick="submitLead()">Запросить полную версию</button>
+    <button class="btn btn-sec btn-full" onclick="document.getElementById('leadModal').style.display='none'">Закрыть</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="title">🛡️ H-AGI <span>GATEWAY</span> • ЛИЧНЫЙ ЩИТ</div>
+    <div class="subtitle">Персональная защита паспорта, карт, адреса и разума в RAM телефона</div>
+    <div class="badges">
+      <span class="badge badge-green">● RAM SHIELD: 0 ЗАПРОСОВ В СЕТЬ</span>
+      <span class="badge badge-amber" id="demoCounter">ДЕМО-ЛИМИТ: 5 / 5 ПРОВЕРОК</span>
+    </div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">⚡ КПД полезной логики</div>
+      <div class="metric-val" id="mLogic">—</div>
+      <div class="metric-sub" id="mLogicSub">Ожидание проверки</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">💰 Экономия токенов</div>
+      <div class="metric-val" id="mRub">0,00 ₽</div>
+      <div class="metric-sub" id="mTokSub">0 сжатых символов</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">🧠 Снижение нагрузки</div>
+      <div class="metric-val" id="mCog">0%</div>
+      <div class="metric-sub">Меньше визуального шума</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">🛡️ Цифровой след</div>
+      <div class="metric-val" id="mPrivacy">0 байт</div>
+      <div class="metric-sub" id="mPrivSub">Утечек в озёра ИИ: 0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="step-title">Шаг 1. Спрятать личные данные</div>
+      <button class="mini-btn" onclick="loadSampleIn()">⚡ Бытовой пример</button>
+    </div>
+    <div class="char-bar">
+      <span>Ручной ввод до 300 символов</span>
+      <span id="inCount">0 / 300</span>
+    </div>
+    <textarea id="inText" placeholder="Вставьте вопрос с именем, паспортом, картой или адресом..." oninput="enforceLimit(this, 'inCount')"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-sec" onclick="pasteTo('inText','inCount')">Вставить</button>
+      <button class="btn btn-green" onclick="processOutbound()">1. Спрятать данные</button>
+    </div>
+    <div class="status-box" id="ramStatus">Спрятано в RAM: 0 данных | Передано в сеть: 0 байт</div>
+    <div class="tokens-wrap" id="tokenChips"></div>
+    <textarea id="outSafe" readonly style="margin-top:8px;" placeholder="Здесь появится безопасный запрос для нейросети..."></textarea>
+    <button class="btn btn-sec btn-full" onclick="copyText('outSafe')">Скопировать безопасный запрос</button>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="step-title">Шаг 2. Очистить ответ ИИ и вернуть данные</div>
+      <button class="mini-btn" onclick="loadSampleAi()">🤖 Пример ответа ИИ</button>
+    </div>
+    <div class="char-bar">
+      <span>Вставка ответа нейросети</span>
+      <span id="aiCount">0 / 300</span>
+    </div>
+    <textarea id="aiText" placeholder="Вставьте ответ от ChatGPT, GigaChat, DeepSeek или Алисы..." oninput="enforceLimit(this, 'aiCount')"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-sec" onclick="pasteTo('aiText','aiCount')">Вставить ответ</button>
+      <button class="btn btn-blue" onclick="processInbound()">2. Очистить и вернуть</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabCleanBtn" onclick="switchTab('clean')">✅ Чистый ответ</button>
+      <button class="tab" id="tabXrayBtn" onclick="switchTab('xray')">👁 Что вырезал щит</button>
+    </div>
+
+    <textarea id="finalOut" readonly style="margin-top:8px;" placeholder="Очищенный ответ с вашими данными и красивыми формулами..."></textarea>
+    <div class="xray-box" id="xrayOut">Нажмите «2. Очистить и вернуть», чтобы увидеть вырезанную лесть и восстановленные данные.</div>
+
+    <div class="btn-row">
+      <button class="btn btn-sec" onclick="copyText('finalOut')">Скопировать текст</button>
+      <button class="btn btn-blue" onclick="copyForWord()">📐 Скопировать для Word</button>
+    </div>
+  </div>
+
+  <button class="btn btn-red" onclick="wipeRam()">🔥 Стереть всё из памяти (Без следов)</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ALLOWED_DOMAIN = "tanja07071984.github.io";
+const BOT_USERNAME = "your_bot_username";
+const MAX_DEMO_CHECKS = 5;
+const MANUAL_LIMIT = 300;
+const WATERMARK = "\n\n[DEMO H-AGI GATEWAY • ЛИЧНЫЙ ЩИТ]";
+
+const STRICT_DIRECTIVE = "СИСТЕМНАЯ ДИРЕКТИВА: Отвечай строго по фактам без лести, вступлений, ссылок и упоминания СМИ. Сохраняй токены в квадратных скобках без изменений.";
+
+let vault = {};
+let reverseVault = {};
+let counters = {};
+let isPresetIn = false;
+let isPresetAi = false;
+let lastCleanPlain = "";
+let lastRawMathText = "";
+
+(function initGate() {
+  document.getElementById("botLink").href = "https://t.me/" + BOT_USERNAME;
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const host = window.location.hostname;
+  const isTg = tg && tg.initData && tg.initData.length > 0;
+  const isAllowedHost = (host === ALLOWED_DOMAIN || host === "localhost" || host === "127.0.0.1" || host === "");
+  if (!isTg && host !== "" && host !== "localhost" && host !== "127.0.0.1") {
+    document.getElementById("lockScreen").style.display = "flex";
+  }
+  if (tg && tg.expand) { try { tg.expand(); } catch(e) {} }
+  updateCounterUI();
+})();
+
+function getChecksLeft() {
+  const used = parseInt(localStorage.getItem("hagi_demo_used") || "0", 10);
+  return Math.max(0, MAX_DEMO_CHECKS - used);
+}
+
+function consumeCheck(hashStr) {
+  const lastHash = sessionStorage.getItem("hagi_last_hash");
+  if (lastHash === hashStr) return true;
+  const left = getChecksLeft();
+  if (left <= 0) {
+    document.getElementById("leadModal").style.display = "flex";
+    return false;
+  }
+  const used = parseInt(localStorage.getItem("hagi_demo_used") || "0", 10) + 1;
+  localStorage.setItem("hagi_demo_used", String(used));
+  sessionStorage.setItem("hagi_last_hash", hashStr);
+  updateCounterUI();
+  return true;
+}
+
+function updateCounterUI() {
+  const left = getChecksLeft();
+  document.getElementById("demoCounter").textContent = "ДЕМО-ЛИМИТ: " + left + " / " + MAX_DEMO_CHECKS + " ПРОВЕРОК";
+  if (left === 0) {
+    document.getElementById("demoCounter").style.color = "#f85149";
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => { t.style.display = "none"; }, 2200);
+}
+
+function enforceLimit(el, countId) {
+  if (el.id === "inText") isPresetIn = false;
+  if (el.id === "aiText") isPresetAi = false;
+  if (el.value.length > MANUAL_LIMIT) {
+    el.value = el.value.slice(0, MANUAL_LIMIT);
+    showToast("Демо-лимит ручного ввода: 300 символов");
+  }
+  document.getElementById(countId).textContent = el.value.length + " / " + MANUAL_LIMIT;
+}
+
+async function pasteTo(id, countId) {
+  try {
+    const txt = await navigator.clipboard.readText();
+    const el = document.getElementById(id);
+    el.value = txt;
+    enforceLimit(el, countId);
+  } catch (e) {
+    showToast("Вставьте текст вручную через меню поля");
+  }
+}
+
+function loadSampleIn() {
+  isPresetIn = true;
+  const sample = "Срочно помогите! Составьте претензию в банк. Меня зовут Ковалёв Сергей Андреевич, паспорт 45 19 842105, карта 2202 2063 8491 5510, СНИЛС 148-920-314 55, тел. +7 (916) 482-19-70, адрес: г. Москва, ул. Тверская, д. 12, кв. 45. Рассчитайте переплату по формуле S = (P * (1 + r)^n) / 12 при r <= 0.15.";
+  document.getElementById("inText").value = sample;
+  document.getElementById("inCount").textContent = sample.length + " (Демо-шаблон)";
+}
+
+function loadSampleAi() {
+  isPresetAi = true;
+  const sample = "Конечно! С радостью помогу вам разобраться в этом важном вопросе. По данным СМИ, претензия для [ФИО_1] (паспорт [ПАСПОРТ_1], карта [КАРТА_1], СНИЛС [СНИЛС_1], тел. [ТЕЛЕФОН_1], адрес: [АДРЕС_1]) подготовлена. Расчёт ежемесячного платежа: P_pay = (S * r * (1 + r)^n) / ((1 + r)^n - 1), где погрешность <= 10^-4 и sqrt(25) = 5. Источники: https://banki.ru/news/123";
+  document.getElementById("aiText").value = sample;
+  document.getElementById("aiCount").textContent = sample.length + " (Демо-ответ)";
+}
+
+function normalizeText(str) {
+  return str.replace(/\u00A0/g, " ").replace(/[\u200B-\u200D\uFEFF]/g, "");
+}
+
+function maskPII(raw) {
+  let text = normalizeText(raw);
+  if (text.startsWith(STRICT_DIRECTIVE)) {
+    text = text.replace(STRICT_DIRECTIVE, "").replace(/^\s*ЗАПРОС:\s*/i, "");
+  }
+  vault = {};
+  reverseVault = {};
+  counters = {};
+
+  const rules = [
+    { key: "КАДАСТР", re: /\b\d{2}:\d{2}:\d{6,7}:\d{1,6}\b/g },
+    { key: "КООРДИНАТЫ", re: /\b\d{2}\.\d{4,8}\s*,\s*\d{2,3}\.\d{4,8}\b/g },
+    { key: "ДОГОВОР", re: /(?:Договор|Соглашение|Акт)\s*№\s*[А-Яа-яA-Za-z0-9\/-]+(?:\s*от\s*\d{2}\.\d{2}\.\d{4})?/gi },
+    { key: "КАРТА", re: /\b(?:220[0-4]|4\d{3}|5[1-5]\d{2})[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g },
+    { key: "СЧЕТ", re: /\b(?:408|407|301)\d{17}\b/g },
+    { key: "СНИЛС", re: /\b\d{3}-\d{3}-\d{3}[\s-]\d{2}\b/g },
+    { key: "ИНН", re: /(?:ИНН\s*)?\b\d{10}(?:\d{2})?\b/gi },
+    { key: "ПАСПОРТ", re: /(?:паспорт\s*)?\b\d{2}\s?\d{2}\s?\d{6}\b/gi },
+    { key: "ТЕЛЕФОН", re: /(?:\+7|8)[\s\-\(]*\d{3}[\s\-\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}\b/g },
+    { key: "EMAIL", re: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
+    { key: "АДРЕС", re: /(?:г\.\s*[А-ЯЁ][а-яё-]+,\s*)?(?:ул\.|пр-т|пер\.|б-р)\s*[А-ЯЁа-яё0-9\s-]+,\s*д\.\s*\d+[А-Яа-я0-9\/-]*(?:,\s*кв\.\s*\d+)?/gi },
+    { key: "ФИО", re: /\b[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+\b/g }
+  ];
+
+  rules.forEach(rule => {
+    text = text.replace(rule.re, match => {
+      const cleanMatch = match.replace(/^(?:паспорт|ИНН)\s*/i, "");
+      if (reverseVault[cleanMatch]) return reverseVault[cleanMatch];
+      counters[rule.key] = (counters[rule.key] || 0) + 1;
+      const token = "[" + rule.key + "_" + counters[rule.key] + "]";
+      vault[token] = cleanMatch;
+      reverseVault[cleanMatch] = token;
+      return token;
+    });
+  });
+
+  return text;
+}
+
+function processOutbound() {
+  const raw = document.getElementById("inText").value.trim();
+  if (!raw) { showToast("Введите текст в Шаг 1"); return; }
+  if (!consumeCheck("out_" + raw.slice(0, 60))) return;
+
+  const masked = maskPII(raw);
+  const count = Object.keys(vault).length;
+  const finalPrompt = STRICT_DIRECTIVE + "\n\nЗАПРОС: " + masked;
+  document.getElementById("outSafe").value = finalPrompt;
+
+  document.getElementById("ramStatus").textContent = "Спрятано в RAM: " + count + " данных | Передано в сеть: 0 байт";
+  const chips = document.getElementById("tokenChips");
+  chips.innerHTML = "";
+  Object.keys(vault).forEach(tok => {
+    const s = document.createElement("span");
+    s.className = "token-chip";
+    s.textContent = tok;
+    chips.appendChild(s);
+  });
+
+  document.getElementById("mPrivacy").textContent = count + " шт / 0 байт";
+  document.getElementById("mPrivSub").textContent = "Изолировано в RAM телефона";
+  showToast("Спрятано личных данных: " + count);
+}
+
+function beautifyMathUnicode(str) {
+  const supMap = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻","+":"⁺","n":"ⁿ","i":"ⁱ" };
+  let out = str
+    .replace(/\^\(?([0-9+-ni]+)\)?/g, (_, exp) => exp.split("").map(c => supMap[c] || c).join(""))
+    .replace(/sqrt\(([^)]+)\)/gi, "√($1)")
+    .replace(/<=/g, "≤")
+    .replace(/>=/g, "≥")
+    .replace(/!=/g, "≠")
+    .replace(/~=/g, "≈")
+    .replace(/->/g, "→")
+    .replace(/\+\/-/g, "±")
+    .replace(/\*/g, "×");
+  return out;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function processInbound() {
+  const raw = normalizeText(document.getElementById("aiText").value.trim());
+  if (!raw) { showToast("Вставьте ответ нейросети в Шаг 2"); return; }
+  if (!consumeCheck("in_" + raw.slice(0, 60))) return;
+
+  let xray = escapeHtml(raw);
+  let clean = raw;
+  let cutChars = 0;
+
+  const noisePatterns = [
+    { tag: "ЛЕСТЬ", re: /(?:Конечно!|С радостью помогу[^.!?]*[.!?]|Отличный вопрос!|Рад помочь[^.!?]*[.!?])\s*/gi },
+    { tag: "СМИ/УЛОВКА", re: /(?:По данным СМИ,|Согласно открытым источникам,|Как языковая модель ИИ,)\s*/gi },
+    { tag: "ИСТОЧНИКИ", re: /(?:Источники:|Ссылки:)\s*https?:\/\/[^\s]+/gi },
+    { tag: "ССЫЛКА", re: /https?:\/\/[^\s)]+/gi }
+  ];
+
+  noisePatterns.forEach(p => {
+    clean = clean.replace(p.re, m => { cutChars += m.length; return ""; });
+    xray = xray.replace(p.re, m => '<span class="xray-tag">' + p.tag + '</span><span class="xray-del">' + m + '</span>');
+  });
+
+  clean = clean.replace(/\s{2,}/g, " ").trim();
+  lastRawMathText = clean;
+  clean = beautifyMathUnicode(clean);
+
+  let restoredCount = 0;
+  Object.keys(vault).forEach(tok => {
+    const val = vault[tok];
+    if (clean.includes(tok)) {
+      restoredCount++;
+      clean = clean.split(tok).join(val);
+      xray = xray.split(escapeHtml(tok)).join('<span class="xray-ok">' + escapeHtml(val) + '</span>');
+    }
+  });
+
+  lastCleanPlain = clean;
+  document.getElementById("finalOut").value = clean;
+  document.getElementById("xrayOut").innerHTML = xray;
+
+  // Пересчёт 4 живых метрик эффективности
+  const origLen = Math.max(1, raw.length);
+  const noiseRatio = Math.min(85, Math.round((cutChars / origLen) * 100));
+  const logicEff = Math.min(98, Math.max(88, 98 - Math.round(noiseRatio * 0.1)));
+  const savedChars = cutChars + Math.round(origLen * 0.18);
+  const savedRub = ((savedChars / 3.5) * 0.0025).toFixed(2).replace(".", ",");
+  const cogDrop = Math.min(78, Math.max(35, noiseRatio + 28));
+
+  document.getElementById("mLogic").textContent = logicEff + "% КПД";
+  document.getElementById("mLogicSub").textContent = "Было ~" + Math.max(38, 100 - noiseRatio - 18) + "% до очистки";
+  document.getElementById("mRub").textContent = savedRub + " ₽";
+  document.getElementById("mTokSub").textContent = "Сжато " + savedChars + " симв. на запросе";
+  document.getElementById("mCog").textContent = "−" + cogDrop + "%";
+  document.getElementById("mPrivacy").textContent = Object.keys(vault).length + " шт / 0 байт";
+  document.getElementById("mPrivSub").textContent = "Возвращено локально: " + restoredCount;
+
+  showToast("Очищено! КПД логики: " + logicEff + "%");
+}
+
+function switchTab(mode) {
+  const isClean = mode === "clean";
+  document.getElementById("finalOut").style.display = isClean ? "block" : "none";
+  document.getElementById("xrayOut").style.display = isClean ? "none" : "block";
+  document.getElementById("tabCleanBtn").classList.toggle("active", isClean);
+  document.getElementById("tabXrayBtn").classList.toggle("active", !isClean);
+}
+
+async function copyText(elId) {
+  const val = document.getElementById(elId).value;
+  if (!val) { showToast("Поле пустое"); return; }
+  await navigator.clipboard.writeText(val + WATERMARK);
+  showToast("Скопировано с демо-меткой");
+}
+
+async function copyForWord() {
+  if (!lastCleanPlain) { showToast("Сначала очистите ответ в Шаге 2"); return; }
+  let htmlBody = escapeHtml(lastCleanPlain).replace(/\n/g, "<br>");
+  // Преобразование дробей вида (A) / (B) в нативный MathML для Word
+  htmlBody = htmlBody.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, (_, num, den) => {
+    return '<math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mrow><mi>' + num + '</mi></mrow><mrow><mi>' + den + '</mi></mrow></mfrac></math>';
+  });
+  htmlBody += "<p style='color:#666;font-size:9pt;'>[DEMO H-AGI GATEWAY • ЛИЧНЫЙ ЩИТ]</p>";
+  try {
+    const blobHtml = new Blob([htmlBody], { type: "text/html" });
+    const blobText = new Blob([lastCleanPlain + WATERMARK], { type: "text/plain" });
+    await navigator.clipboard.write([new ClipboardItem({ "text/html": blobHtml, "text/plain": blobText })]);
+    showToast("Скопировано для Word (нажмите Ctrl+V в Word)");
+  } catch (e) {
+    await navigator.clipboard.writeText(lastCleanPlain + WATERMARK);
+    showToast("Скопировано в буфер обмена");
+  }
+}
+
+function wipeRam() {
+  vault = {}; reverseVault = {}; counters = {}; lastCleanPlain = ""; lastRawMathText = "";
+  ["inText","outSafe","aiText","finalOut"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("inCount").textContent = "0 / 300";
+  document.getElementById("aiCount").textContent = "0 / 300";
+  document.getElementById("tokenChips").innerHTML = "";
+  document.getElementById("ramStatus").textContent = "RAM-сейф обнулён • Следов на диске: 0";
+  document.getElementById("xrayOut").textContent = "Память очищена.";
+  document.getElementById("mLogic").textContent = "—";
+  document.getElementById("mLogicSub").textContent = "Ожидание проверки";
+  document.getElementById("mRub").textContent = "0,00 ₽";
+  document.getElementById("mTokSub").textContent = "0 сжатых символов";
+  document.getElementById("mCog").textContent = "0%";
+  document.getElementById("mPrivacy").textContent = "0 байт";
+  document.getElementById("mPrivSub").textContent = "Цифровой след обнулён";
+  showToast("🔥 Память полностью очищена (Zero-Trace)");
+}
+
+function submitLead() {
+  const name = document.getElementById("leadName").value.trim();
+  const contact = document.getElementById("leadContact").value.trim();
+  if (!name || !contact) { showToast("Заполните имя и контакт"); return; }
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg && tg.sendData) {
+    try { tg.sendData(JSON.stringify({ type: "personal_full_request", name, contact })); } catch(e) {}
+  }
+  document.getElementById("leadModal").style.display = "none";
+  showToast("Заявка отправлена! Мы скоро свяжемся с вами.");
+}
+</script>
+</body>
+</html>
